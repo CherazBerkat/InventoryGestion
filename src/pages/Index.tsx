@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -26,6 +25,8 @@ import CountingSessionManager from "@/components/CountingSession";
 import LoginForm from "@/components/LoginForm";
 import PasswordDialog from "@/components/PasswordDialog";
 import { toast } from "sonner";
+import SearchBar from "@/components/SearchBar";
+import ExcelImporterSpecial from "@/components/ExcelImporterSpecial";
 
 // Configuration des identifiants
 const ADMIN_CREDENTIALS = {
@@ -137,6 +138,10 @@ export default function Index() {
     );
   };
 
+  const handleUpdateItemsExcel = (newItems: InventoryItem[]) => {
+    console.log("the curent items:");
+  };
+
   const handleSessionChange = (newSession: CountingSession) => {
     setCurrentSession(newSession);
   };
@@ -161,7 +166,10 @@ export default function Index() {
     }
     return false;
   };
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
   // Show login form if not authenticated
   if (!isAuthenticated) {
     return <LoginForm onLogin={handleLogin} />;
@@ -379,19 +387,41 @@ export default function Index() {
                 value={inputMode}
                 onValueChange={(value) => setInputMode(value as InputMode)}
               >
-                {/* <div className="flex ">*/}
-                <TabsList className=" basis-6/10 grid w-full grid-cols-2">
-                  <TabsTrigger value="sequential">Mode Séquentiel</TabsTrigger>
-                  <TabsTrigger value="excel">Mode Tableau</TabsTrigger>
-                </TabsList>
-                {/* <div className="basis-4/10">card</div>
-                </div> */}
+                <div className="w-full flex items-center h-[200px] gap-4">
+                  <Card className="flex-[7] flex flex-col items-center justify-center gap-6 h-full px-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="sequential">
+                        Mode Séquentiel
+                      </TabsTrigger>
+                      <TabsTrigger value="excel">Mode Tableau</TabsTrigger>
+                    </TabsList>
+                    <div className="w-full">
+                      <SearchBar onSearch={handleSearch} />
+                    </div>
+                  </Card>
+                  <div className="flex-[3] h-full flex">
+                    <Card className="flex-1 h-full">
+                      <CardHeader className="py-2">
+                        <CardTitle className="text-l">
+                          Importer les quantités comptées{" "}
+                        </CardTitle>
+                        <CardDescription>
+                          Entrer les quantités comptées par un fichier Excel
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex justify-center">
+                        <ExcelImporterSpecial onImport={handleImportItems} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
 
                 <TabsContent value="sequential" className="mt-6">
                   <SequentialInput
                     items={filteredItems}
                     currentSession={currentSession.sessionNumber}
                     onUpdateItem={handleUpdateItem}
+                    searchQuery={searchQuery}
                   />
                 </TabsContent>
 
@@ -400,6 +430,7 @@ export default function Index() {
                     items={filteredItems}
                     currentSession={currentSession.sessionNumber}
                     onUpdateItem={handleUpdateItem}
+                    searchQuery={searchQuery}
                   />
                 </TabsContent>
               </Tabs>
