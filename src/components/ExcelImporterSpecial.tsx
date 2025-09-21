@@ -1,23 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Upload, FileSpreadsheet } from "lucide-react";
-import { parseExcelFile } from "@/lib/excelUtils";
+import { Upload } from "lucide-react";
+import { parseExcelFileSpecial } from "@/lib/excelUtilsSepcial";
 import { InventoryItem } from "@/types/inventory";
 import { toast } from "sonner";
 
 interface ExcelImporterProps {
   onImport: (items: InventoryItem[]) => void;
+  itemsIni: InventoryItem[];
+  CurrentSession;
 }
 
-export default function ExcelImporterSpecial({ onImport }: ExcelImporterProps) {
+export default function ExcelImporterSpecial({
+  onImport,
+  itemsIni,
+  CurrentSession,
+}: ExcelImporterProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFileUpload = async (
@@ -33,9 +32,9 @@ export default function ExcelImporterSpecial({ onImport }: ExcelImporterProps) {
 
     setIsLoading(true);
     try {
-      const items = await parseExcelFile(file);
+      const items = await parseExcelFileSpecial(file, itemsIni, CurrentSession);
       onImport(items);
-      toast.success(`${items.length} articles importés avec succès`);
+      toast.success(`${items.length} quantités importés avec succès`);
     } catch (error) {
       console.error("Erreur lors de l'importation:", error);
       toast.error("Erreur lors de l'importation du fichier Excel");

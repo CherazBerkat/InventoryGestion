@@ -19,14 +19,17 @@ export const parseExcelFile = (file: File): Promise<InventoryItem[]> => {
         const inventoryItems: InventoryItem[] = jsonData.map(
           (row, index: number) => {
             // Map Excel columns to our data structure
-            const emplacement = row["EMPLACEMENT"] || row["Emplacement"] || "";
-            const articleCode =
+            const emplacement = String(
+              row["EMPLACEMENT"] || row["Emplacement"] || ""
+            ).trim();
+            const articleCode = String(
               row["N° PIECE"] ||
-              row["Code"] ||
-              row["Article"] ||
-              row["SKU"] ||
-              row["Référence"] ||
-              `ITEM-${index + 1}`;
+                row["Code"] ||
+                row["Article"] ||
+                row["SKU"] ||
+                row["Référence"] ||
+                `ITEM-${index + 1}`
+            ).trim();
             const description =
               row["DESIGNATION"] ||
               row["Description"] ||
@@ -40,7 +43,6 @@ export const parseExcelFile = (file: File): Promise<InventoryItem[]> => {
             const prix = parseFloat(
               String(row["PRIX"] || row["Prix"] || row["Price"] || 0)
             );
-            /* const stock = parseFloat(String(row['Quantite theorique'] || row['Stock'] || row['Quantité'] || row['Qty'] || row['Quantity'] || 0));*/
             const stock = parseFloat(
               String(
                 row["Quantite theorique"] ||

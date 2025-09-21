@@ -139,7 +139,8 @@ export default function Index() {
   };
 
   const handleUpdateItemsExcel = (newItems: InventoryItem[]) => {
-    console.log("the curent items:");
+    setItems(newItems);
+    toast.success(`${newItems.length} quantités importés avec succès`);
   };
 
   const handleSessionChange = (newSession: CountingSession) => {
@@ -400,7 +401,12 @@ export default function Index() {
                     </div>
                   </Card>
                   <div className="flex-[3] h-full flex">
-                    <Card className="flex-1 h-full">
+                    <Card
+                      className={`flex-1 h-full ${
+                        currentSession.completedItems &&
+                        "opacity-50 cursor-not-allowed"
+                      }`}
+                    >
                       <CardHeader className="py-2">
                         <CardTitle className="text-l">
                           Importer les quantités comptées{" "}
@@ -410,7 +416,11 @@ export default function Index() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="flex justify-center">
-                        <ExcelImporterSpecial onImport={handleImportItems} />
+                        <ExcelImporterSpecial
+                          onImport={handleUpdateItemsExcel}
+                          itemsIni={items}
+                          CurrentSession={currentSession.sessionNumber}
+                        />
                       </CardContent>
                     </Card>
                   </div>
