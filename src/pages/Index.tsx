@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   RotateCcw,
   LogOut,
+  Database,
 } from "lucide-react";
 import { InventoryItem, CountingSession, InputMode } from "@/types/inventory";
 import ExcelImporter from "@/components/ExcelImporter";
@@ -27,6 +28,7 @@ import PasswordDialog from "@/components/PasswordDialog";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import ExcelImporterSpecial from "@/components/ExcelImporterSpecial";
+import { Script } from "vm";
 
 // Configuration des identifiants
 const ADMIN_CREDENTIALS = {
@@ -212,6 +214,47 @@ export default function Index() {
     const variance = item[varianceField] as number | undefined;
     return variance && variance < 0;
   }).length;
+
+  const scriptHandler = () => {
+    // generate sessionId
+    const year = new Date().getFullYear();
+    const sessionId = `INV${year}MC`;
+
+    // build script
+    const lines: string[] = [];
+    lines.push(`alter table "COSWIN"."T_COUNT_ITEM" disable all triggers;`);
+
+    for (const item of items) {
+      if (item.counting3 !== undefined) {
+        lines.push(
+          `UPDATE T_COUNT_ITEM SET SCIT_Adjustment_Disabled='1', scit_quantity='${item.counting3}' ` +
+            `WHERE SCIT_COUNT='${sessionId}' AND SCIT_ITEM='${
+              item.articleCode
+            }' AND SCIT_BIN='${item.emplacement || ""}';`
+        );
+      }
+    }
+
+    lines.push(`alter table "COSWIN"."T_COUNT_ITEM" enable all triggers;`);
+    lines.push(`commit;`);
+
+    const script = lines.join("\n");
+
+    // log for debug
+    console.log("Script PL/SQL généré:\n", script);
+
+    // auto-download as .sql file
+    const blob = new Blob([script], { type: "text/sql" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `plsql_script_${sessionId}.sql`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const updateDbHandler = () => {
+    console.log("Mise à jour de la base Oracle effectuée");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
@@ -403,7 +446,7 @@ export default function Index() {
                   <div className="flex-[3] h-full flex">
                     <Card
                       className={`flex-1 h-full ${
-                        currentSession.completedItems &&
+                        currentSession.completedItems.length == items.length &&
                         "opacity-50 cursor-not-allowed"
                       }`}
                     >
@@ -444,6 +487,37 @@ export default function Index() {
                   />
                 </TabsContent>
               </Tabs>
+            </CardContent>
+          </Card>
+        )}
+        {items.length > 0 && (
+          <Card className="h-80">
+            <CardContent className="flex justify-between items-center h-full p-6 gap-6">
+              {/* Section 1 */}
+              <div
+                className="flex-1 flex flex-col h-full justify-center items-center text-center border rounded-lg p-6 cursor-pointer"
+                onClick={scriptHandler}
+              >
+                <FileSpreadsheet className="w-16 h-16 text-blue-500 mb-4" />
+                <CardTitle className="mb-2">Générer script PL/SQL</CardTitle>
+                <CardDescription>
+                  Produire un script PL/SQL basé sur un fichier Excel pour
+                  exécuter ultérieurement dans Oracle.
+                </CardDescription>
+              </div>
+
+              {/* Section 2 */}
+              <div
+                className="flex-1 flex flex-col h-full justify-center items-center text-center border rounded-lg p-6 cursor-pointer"
+                onClick={updateDbHandler}
+              >
+                <Database className="w-16 h-16 text-green-500 mb-4" />
+                <CardTitle className="mb-2">Mise à jour Oracle</CardTitle>
+                <CardDescription>
+                  Mettre à jour directement la base Oracle en important un
+                  nouveau fichier Excel.
+                </CardDescription>
+              </div>
             </CardContent>
           </Card>
         )}
