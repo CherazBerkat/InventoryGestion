@@ -4,7 +4,7 @@ import { InventoryItem } from "@/types/inventory";
 export const parseExcelFileSpecial = (
   file: File,
   itemsIni: InventoryItem[],
-  currentSession: 1 | 2 | 3
+  currentSession: 1 | 2 | 3 | 4
 ): Promise<InventoryItem[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -47,6 +47,20 @@ export const parseExcelFileSpecial = (
                 row["STOCK"] ||
                 row["QTY"] ||
                 row["QUANTITY"] ||
+                row["STOCK SESSION"] ||
+                row["STOCK SESSION 2"] ||
+                row["STOCK SESSION 3"] ||
+                row["STOCK SESSION 4"] ||
+                row["STOCK SESSION2"] ||
+                row["STOCK SESSION3"] ||
+                row["STOCK SESSION4"] ||
+                row["Stock Session"] ||
+                row["Stock Session 2"] ||
+                row["Stock Session 3"] ||
+                row["Stock Session 4"] ||
+                row["Stock Session2"] ||
+                row["Stock Session3"] ||
+                row["Stock Session4"] ||
                 0
             )
           );
@@ -63,27 +77,15 @@ export const parseExcelFileSpecial = (
           if (!row) {
             return item;
           }
-          const newCounting = row.quantity;
+          const StockSession = row.quantity;
           const updatedItem = { ...item };
 
-          if (currentSession === 1) {
-            updatedItem.counting1 = newCounting;
-            updatedItem.variance1 = newCounting - item.initialStock;
-            updatedItem.valueVariance1 =
-              updatedItem.variance1 * (item.prix || 0);
-          } else if (currentSession === 2) {
-            updatedItem.counting2 = newCounting;
-            updatedItem.variance2 =
-              newCounting - (item.counting1 ?? item.initialStock);
-            updatedItem.valueVariance2 =
-              updatedItem.variance2 * (item.prix || 0);
+          if (currentSession === 2) {
+            updatedItem.initialStock2 = StockSession;
           } else if (currentSession === 3) {
-            updatedItem.counting3 = newCounting;
-            updatedItem.variance3 =
-              newCounting -
-              (item.counting2 ?? item.counting1 ?? item.initialStock);
-            updatedItem.valueVariance3 =
-              updatedItem.variance3 * (item.prix || 0);
+            updatedItem.initialStock3 = StockSession;
+          } else if (currentSession === 4) {
+            updatedItem.initialStock4 = StockSession;
           }
 
           updatedItem.lastUpdated = new Date().toISOString();

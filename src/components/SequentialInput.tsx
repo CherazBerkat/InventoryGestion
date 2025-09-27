@@ -24,6 +24,7 @@ interface SequentialInputProps {
   currentSession: number;
   onUpdateItem: (itemId: string, updates: Partial<InventoryItem>) => void;
   searchQuery;
+  isSession4;
 }
 
 export default function SequentialInput({
@@ -31,6 +32,7 @@ export default function SequentialInput({
   currentSession,
   onUpdateItem,
   searchQuery,
+  isSession4,
 }: SequentialInputProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [countingValue, setCountingValue] = useState("");
@@ -78,9 +80,38 @@ export default function SequentialInput({
     const varianceField = `variance${currentSession}` as keyof InventoryItem;
     const valueVarianceField =
       `valueVariance${currentSession}` as keyof InventoryItem;
-    const variance = value - currentItem.initialStock;
-    const valueVariance = currentItem.prix ? variance * currentItem.prix : 0;
 
+    let variance: number;
+    if (currentSession === 2 && currentItem.initialStock2) {
+      variance = value - currentItem.initialStock2;
+    } else if (currentSession === 3 && currentItem.initialStock3) {
+      variance = value - currentItem.initialStock3;
+    } else if (
+      currentSession === 3 &&
+      !currentItem.initialStock3 &&
+      currentItem.initialStock2
+    ) {
+      variance = value - currentItem.initialStock2;
+    } else if (currentSession === 4 && currentItem.initialStock4) {
+      variance = value - currentItem.initialStock4;
+    } else if (
+      currentSession === 4 &&
+      !currentItem.initialStock4 &&
+      currentItem.initialStock3
+    ) {
+      variance = value - currentItem.initialStock3;
+    } else if (
+      currentSession === 4 &&
+      !currentItem.initialStock4 &&
+      !currentItem.initialStock3 &&
+      currentItem.initialStock2
+    ) {
+      variance = value - currentItem.initialStock2;
+    } else {
+      variance = value - currentItem.initialStock;
+    }
+
+    const valueVariance = currentItem.prix ? variance * currentItem.prix : 0;
     const updates: Partial<InventoryItem> = {
       [countingField]: value,
       [varianceField]: variance,
@@ -240,9 +271,14 @@ export default function SequentialInput({
           {/* Previous Countings */}
           {(currentItem.counting1 !== undefined ||
             currentItem.counting2 !== undefined ||
-            currentItem.counting3 !== undefined) && (
-            <div className="grid grid-cols-3 gap-4">
-              {[1, 2, 3].map((session) => {
+            currentItem.counting3 !== undefined ||
+            (isSession4 && currentItem.counting4 !== undefined)) && (
+            <div
+              className={`grid gap-4 ${
+                isSession4 ? "grid-cols-4" : "grid-cols-3"
+              }`}
+            >
+              {(isSession4 ? [1, 2, 3, 4] : [1, 2, 3]).map((session) => {
                 const counting = currentItem[
                   `counting${session}` as keyof InventoryItem
                 ] as number | undefined;
@@ -291,7 +327,6 @@ export default function SequentialInput({
               })}
             </div>
           )}
-
           {/* Current Session Input */}
           <div className="space-y-4">
             <div>

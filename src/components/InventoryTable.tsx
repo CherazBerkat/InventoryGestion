@@ -27,6 +27,7 @@ interface InventoryTableProps {
   currentSession: number;
   onUpdateItem: (itemId: string, updates: Partial<InventoryItem>) => void;
   searchQuery;
+  isSession4;
 }
 
 export default function InventoryTable({
@@ -34,6 +35,7 @@ export default function InventoryTable({
   currentSession,
   onUpdateItem,
   searchQuery,
+  isSession4,
 }: InventoryTableProps) {
   const [editingValues, setEditingValues] = useState<Record<string, string>>(
     {}
@@ -80,9 +82,37 @@ export default function InventoryTable({
     const varianceField = `variance${currentSession}` as keyof InventoryItem;
     const valueVarianceField =
       `valueVariance${currentSession}` as keyof InventoryItem;
-    const variance = countingValue - item.initialStock;
-    const valueVariance = item.prix ? variance * item.prix : 0;
+    let variance: number;
+    if (currentSession === 2 && item.initialStock2) {
+      variance = countingValue - item.initialStock2;
+    } else if (currentSession === 3 && item.initialStock3) {
+      variance = countingValue - item.initialStock3;
+    } else if (
+      currentSession === 3 &&
+      !item.initialStock3 &&
+      item.initialStock2
+    ) {
+      variance = countingValue - item.initialStock2;
+    } else if (currentSession === 4 && item.initialStock4) {
+      variance = countingValue - item.initialStock4;
+    } else if (
+      currentSession === 4 &&
+      !item.initialStock4 &&
+      item.initialStock3
+    ) {
+      variance = countingValue - item.initialStock3;
+    } else if (
+      currentSession === 4 &&
+      !item.initialStock4 &&
+      !item.initialStock3 &&
+      item.initialStock2
+    ) {
+      variance = countingValue - item.initialStock2;
+    } else {
+      variance = countingValue - item.initialStock;
+    }
 
+    const valueVariance = item.prix ? variance * item.prix : 0;
     // Create stock movement for tracking
     const movement: StockMovement = {
       id: `movement-${Date.now()}`,
@@ -187,12 +217,23 @@ export default function InventoryTable({
                     <TableHead>Comptage 1</TableHead>
                     <TableHead>Écart Qté 1</TableHead>
                     <TableHead>Écart Val 1</TableHead>
+                    <TableHead>Stock Session 2</TableHead>
                     <TableHead>Comptage 2</TableHead>
                     <TableHead>Écart Qté 2</TableHead>
                     <TableHead>Écart Val 2</TableHead>
+                    <TableHead>Stock Session 3</TableHead>
                     <TableHead>Comptage 3</TableHead>
                     <TableHead>Écart Qté 3</TableHead>
                     <TableHead>Écart Val 3</TableHead>
+                    {isSession4 && (
+                      <>
+                        <TableHead>Stock Session 4</TableHead>
+                        <TableHead>Comptage 4</TableHead>
+                        <TableHead>Écart Qté 4</TableHead>
+                        <TableHead>Écart Val 4</TableHead>
+                      </>
+                    )}
+
                     <TableHead>Saisie Session {currentSession}</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -275,6 +316,7 @@ export default function InventoryTable({
                         </TableCell>
 
                         {/* Comptage 2 */}
+                        <TableCell>{item.initialStock2 || "-"}</TableCell>
                         <TableCell>
                           {item.counting2 !== undefined ? (
                             <Badge variant="outline">{item.counting2}</Badge>
@@ -316,6 +358,7 @@ export default function InventoryTable({
                         </TableCell>
 
                         {/* Comptage 3 */}
+                        <TableCell>{item.initialStock3 || "-"}</TableCell>
                         <TableCell>
                           {item.counting3 !== undefined ? (
                             <Badge variant="outline">{item.counting3}</Badge>
@@ -355,6 +398,58 @@ export default function InventoryTable({
                             <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
+                        {isSession4 && (
+                          <>
+                            {/* Comptage 4 */}
+                            <TableCell>{item.initialStock4 || "-"}</TableCell>
+                            <TableCell>
+                              {item.counting4 !== undefined ? (
+                                <Badge variant="outline">
+                                  {item.counting4}
+                                </Badge>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {item.variance4 !== undefined ? (
+                                <Badge
+                                  variant={
+                                    item.variance4 >= 0
+                                      ? "default"
+                                      : "destructive"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {item.variance4 >= 0 ? "+" : ""}
+                                  {item.variance4}
+                                </Badge>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {item.valueVariance4 !== undefined ? (
+                                <Badge
+                                  variant={
+                                    item.valueVariance4 >= 0
+                                      ? "default"
+                                      : "destructive"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {item.valueVariance4 >= 0 ? "+" : ""}
+                                  {item.valueVariance4.toLocaleString(
+                                    "fr-DZ"
+                                  )}{" "}
+                                  DA
+                                </Badge>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                          </>
+                        )}
 
                         {/* Current Session Input */}
                         <TableCell>

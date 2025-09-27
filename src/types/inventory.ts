@@ -7,16 +7,22 @@ export interface InventoryItem {
   uniteMesure?: string;
   prix?: number;
   initialStock: number;
+  initialStock2?: number;
+  initialStock3?: number;
+  initialStock4?: number;
   currentStock: number;
   counting1?: number;
   counting2?: number;
   counting3?: number;
+  counting4?: number;
   variance1?: number;
   variance2?: number;
   variance3?: number;
+  variance4?: number;
   valueVariance1?: number; // Écart en valeur (variance * prix unitaire)
   valueVariance2?: number;
   valueVariance3?: number;
+  valueVariance4?: number;
   lastUpdated: string;
   movements: StockMovement[];
   isCountingCompleted?: boolean;
@@ -24,7 +30,7 @@ export interface InventoryItem {
 
 export interface StockMovement {
   id: string;
-  type: 'counting' | 'external';
+  type: "counting" | "external";
   quantity: number;
   session?: number;
   timestamp: string;
@@ -32,9 +38,9 @@ export interface StockMovement {
 }
 
 export interface CountingSession {
-  sessionNumber: 1 | 2 | 3;
+  sessionNumber: 1 | 2 | 3 | 4;
   isActive: boolean;
   completedItems: string[];
 }
 
-export type InputMode = 'sequential' | 'excel';
+export type InputMode = "sequential" | "excel";

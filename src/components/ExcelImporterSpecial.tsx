@@ -34,7 +34,7 @@ export default function ExcelImporterSpecial({
     try {
       const items = await parseExcelFileSpecial(file, itemsIni, CurrentSession);
       onImport(items);
-      toast.success(`${items.length} quantités importés avec succès`);
+      toast.success(`${items.length} stocks importés avec succès`);
     } catch (error) {
       console.error("Erreur lors de l'importation:", error);
       toast.error("Erreur lors de l'importation du fichier Excel");

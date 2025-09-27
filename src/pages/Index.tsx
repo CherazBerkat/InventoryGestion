@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import {
   RotateCcw,
   LogOut,
   Database,
+  Plus,
 } from "lucide-react";
 import { InventoryItem, CountingSession, InputMode } from "@/types/inventory";
 import ExcelImporter from "@/components/ExcelImporter";
@@ -40,6 +41,8 @@ export default function Index() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [isSession4, setIsSession4] = useState(false);
+  const [dissapear4, setDissapear4] = useState(false);
   const [currentSession, setCurrentSession] = useState<CountingSession>({
     sessionNumber: 1,
     isActive: true,
@@ -62,7 +65,8 @@ export default function Index() {
 
     const savedItems = localStorage.getItem("inventory-items");
     const savedSession = localStorage.getItem("current-session");
-
+    const saved4 = localStorage.getItem("isSession4");
+    const disapear4 = localStorage.getItem("disapear4");
     if (savedItems) {
       const parsedItems = JSON.parse(savedItems);
       setItems(parsedItems);
@@ -70,6 +74,13 @@ export default function Index() {
 
     if (savedSession) {
       setCurrentSession(JSON.parse(savedSession));
+    }
+
+    if (saved4) {
+      setIsSession4(saved4 === "true");
+      if (disapear4) {
+        setDissapear4(disapear4 === "true");
+      }
     }
   }, [isAuthenticated]);
 
@@ -79,26 +90,34 @@ export default function Index() {
 
     localStorage.setItem("inventory-items", JSON.stringify(items));
     localStorage.setItem("current-session", JSON.stringify(currentSession));
-  }, [items, currentSession, isAuthenticated]);
+    localStorage.setItem("isSession4", JSON.stringify(isSession4));
+    localStorage.setItem("disapear4", JSON.stringify(dissapear4));
+  }, [items, currentSession, isAuthenticated, dissapear4, isSession4]);
 
   // Filter items based on session and zero variance logic
   useEffect(() => {
     let filtered = [...items];
 
-    // For sessions 2 and 3, hide items with zero variance from previous sessions
     if (currentSession.sessionNumber === 2) {
       // Hide items where counting1 exists and variance1 = 0
       filtered = filtered.filter(
         (item) => item.counting1 === undefined || item.variance1 !== 0
       );
     } else if (currentSession.sessionNumber === 3) {
-      // Hide items where:
-      // - counting1 exists and variance1 = 0, OR
-      // - counting2 exists and variance2 = 0
+      // Hide items where counting1 exists with variance1 = 0
+      // OR counting2 exists with variance2 = 0
       filtered = filtered.filter(
         (item) =>
           (item.counting1 === undefined || item.variance1 !== 0) &&
           (item.counting2 === undefined || item.variance2 !== 0)
+      );
+    } else if (currentSession.sessionNumber === 4) {
+      // Hide items where counting1, counting2, or counting3 exist with variance = 0
+      filtered = filtered.filter(
+        (item) =>
+          (item.counting1 === undefined || item.variance1 !== 0) &&
+          (item.counting2 === undefined || item.variance2 !== 0) &&
+          (item.counting3 === undefined || item.variance3 !== 0)
       );
     }
 
@@ -142,7 +161,8 @@ export default function Index() {
 
   const handleUpdateItemsExcel = (newItems: InventoryItem[]) => {
     setItems(newItems);
-    toast.success(`${newItems.length} quantités importés avec succès`);
+    toast.success(`${newItems.length} stocks importés avec succès`);
+    console.log(newItems);
   };
 
   const handleSessionChange = (newSession: CountingSession) => {
@@ -162,6 +182,8 @@ export default function Index() {
         isActive: true,
         completedItems: [],
       });
+      setIsSession4(false);
+      setDissapear4(false);
       localStorage.removeItem("inventory-items");
       localStorage.removeItem("current-session");
       toast.success("Données réinitialisées");
@@ -254,6 +276,11 @@ export default function Index() {
   };
   const updateDbHandler = () => {
     console.log("Mise à jour de la base Oracle effectuée");
+  };
+  const ajouterSessionhandler = () => {
+    console.log("new session");
+    setIsSession4(true);
+    setDissapear4(true);
   };
 
   return (
@@ -380,8 +407,17 @@ export default function Index() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Session de Comptage</CardTitle>
-            <CardDescription>
-              Gérez les sessions de comptage et suivez la progression
+            <CardDescription className="flex justify-between items-center">
+              <div>Gérez les sessions de comptage et suivez la progression</div>
+              {currentSession.sessionNumber === 3 && !dissapear4 && (
+                <div
+                  className="flex justify-center items-center text-black font-medium cursor-pointer"
+                  onClick={ajouterSessionhandler}
+                >
+                  <p>Ajouter une autre session </p>
+                  <Plus className="w-6 pt-0.5" />
+                </div>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -390,6 +426,7 @@ export default function Index() {
               onSessionChange={handleSessionChange}
               items={items}
               filteredItems={filteredItems}
+              isSession4={isSession4}
             />
           </CardContent>
         </Card>
@@ -443,30 +480,32 @@ export default function Index() {
                       <SearchBar onSearch={handleSearch} />
                     </div>
                   </Card>
-                  <div className="flex-[3] h-full flex">
-                    <Card
-                      className={`flex-1 h-full ${
-                        currentSession.completedItems.length == items.length &&
-                        "opacity-50 cursor-not-allowed"
-                      }`}
-                    >
-                      <CardHeader className="py-2">
-                        <CardTitle className="text-l">
-                          Importer les quantités comptées{" "}
-                        </CardTitle>
-                        <CardDescription>
-                          Entrer les quantités comptées par un fichier Excel
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex justify-center">
-                        <ExcelImporterSpecial
-                          onImport={handleUpdateItemsExcel}
-                          itemsIni={items}
-                          CurrentSession={currentSession.sessionNumber}
-                        />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  {currentSession.sessionNumber > 1 && (
+                    <div className="flex-[3] h-full flex">
+                      <Card
+                        className={`flex-1 h-full ${
+                          currentSession.completedItems.length ==
+                            items.length && "opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        <CardHeader className="py-2">
+                          <CardTitle className="text-l">
+                            Importer les stocks de la session
+                          </CardTitle>
+                          <CardDescription>
+                            Entrer les stocks par un fichier Excel
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                          <ExcelImporterSpecial
+                            onImport={handleUpdateItemsExcel}
+                            itemsIni={items}
+                            CurrentSession={currentSession.sessionNumber}
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
                 </div>
 
                 <TabsContent value="sequential" className="mt-6">
@@ -475,6 +514,7 @@ export default function Index() {
                     currentSession={currentSession.sessionNumber}
                     onUpdateItem={handleUpdateItem}
                     searchQuery={searchQuery}
+                    isSession4={isSession4}
                   />
                 </TabsContent>
 
@@ -484,6 +524,7 @@ export default function Index() {
                     currentSession={currentSession.sessionNumber}
                     onUpdateItem={handleUpdateItem}
                     searchQuery={searchQuery}
+                    isSession4={isSession4}
                   />
                 </TabsContent>
               </Tabs>
